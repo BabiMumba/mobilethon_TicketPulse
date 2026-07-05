@@ -29,16 +29,17 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
       role="presentation"
     >
       <div
-        className="animate-scale-in w-full max-w-md overflow-hidden rounded-t-3xl border border-white/10 bg-slate-900 shadow-2xl sm:rounded-3xl"
+        className="animate-scale-in flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-900 shadow-2xl sm:max-h-[min(90dvh,720px)] sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
             <h2 className="text-lg font-bold">{title}</h2>
             <button
+              type="button"
               onClick={onClose}
               aria-label="Close"
               className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
@@ -47,7 +48,7 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
             </button>
           </div>
         )}
-        <div className="p-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">{children}</div>
       </div>
     </div>
   )

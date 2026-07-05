@@ -1,11 +1,10 @@
 import { supabase } from '../lib/supabase'
 import { mapTicketRow, mapTicketToRow } from '../lib/supabaseMap'
-import type { NewTicketInput, Ticket, TicketsRepository } from './types'
+import type { EventBooking, NewTicketInput, Ticket, TicketsRepository } from './types'
 
 const CACHE_PREFIX = 'tp:tickets:'
+const ALL_TICKETS_KEY = 'tp:tickets:all'
 
-// LocalStorage fallback cache so purchased passes open instantly in
-// low-bandwidth zones across Lusaka — even before any network round-trip.
 function readCache(userId: string): Ticket[] {
   try {
     const raw = localStorage.getItem(CACHE_PREFIX + userId)
@@ -19,8 +18,21 @@ function writeCache(userId: string, tickets: Ticket[]): void {
   try {
     localStorage.setItem(CACHE_PREFIX + userId, JSON.stringify(tickets))
   } catch {
-    /* storage full / unavailable — non-fatal */
+    /* non-fatal */
   }
+}
+
+function readAllTickets(): Ticket[] {
+  try {
+    return JSON.parse(localStorage.getItem(ALL_TICKETS_KEY) || '[]') as Ticket[]
+  } catch {
+    return []
+  }
+}
+
+function appendTicket(ticket: Ticket): void {
+  writeCache(ticket.userId, [ticket, ...readCache(ticket.userId)])
+  localStorage.setItem(ALL_TICKETS_KEY, JSON.stringify([ticket, ...readAllTickets()]))
 }
 
 function makeCode(city: string): string {
@@ -53,6 +65,20 @@ function buildTicket(input: NewTicketInput): Ticket {
   }
 }
 
+function mapToBooking(ticket: Ticket, name: string, email: string): EventBooking {
+  return {
+    ticketId: ticket.id,
+    code: ticket.code,
+    attendeeName: name,
+    attendeeEmail: email,
+    quantity: ticket.quantity,
+    amountPaid: ticket.amountPaid,
+    currency: ticket.currency,
+    status: ticket.status,
+    purchasedAt: ticket.purchasedAt,
+  }
+}
+
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
 const mockTicketsRepository: TicketsRepository = {
@@ -62,26 +88,34 @@ const mockTicketsRepository: TicketsRepository = {
   },
   async get(id) {
     await delay(150)
-    for (const key of Object.keys(localStorage)) {
-      if (!key.startsWith(CACHE_PREFIX)) continue
-      const found = (JSON.parse(localStorage.getItem(key) || '[]') as Ticket[]).find(
-        (t) => t.id === id,
-      )
-      if (found) return found
-    }
-    return null
+    return readAllTickets().find((t) => t.id === id) ?? null
   },
   async create(input) {
     await delay(400)
     const ticket = buildTicket(input)
-    const tickets = [ticket, ...readCache(input.userId)]
-    writeCache(input.userId, tickets)
+    appendTicket(ticket)
     return ticket
+  },
+  async listForEvent(eventId) {
+    await delay(200)
+    return readAllTickets()
+      .filter((t) => t.eventId === eventId)
+      .map((t) => mapToBooking(t, 'Guest', 'guest@local.dev'))
   },
 }
 
-// Supabase-backed tickets, with the same localStorage cache used as an offline
-// read-through fallback so tickets remain scannable with no network.
+type TicketWithProfile = {
+  id: string
+  code: string
+  user_id: string
+  quantity: number
+  amount_paid: number
+  currency: string
+  status: string
+  purchased_at: string
+  profiles: { full_name: string; email: string } | { full_name: string; email: string }[] | null
+}
+
 const supabaseTicketsRepository: TicketsRepository = {
   async listForUser(userId) {
     const { data, error } = await supabase!
@@ -106,8 +140,35 @@ const supabaseTicketsRepository: TicketsRepository = {
     const ticket = buildTicket(input)
     const { error } = await supabase!.from('tickets').insert(mapTicketToRow(ticket))
     if (error) throw new Error(error.message)
-    writeCache(input.userId, [ticket, ...readCache(input.userId)])
+    appendTicket(ticket)
     return ticket
+  },
+  async listForEvent(eventId) {
+    const { data, error } = await supabase!
+      .from('tickets')
+      .select('id, code, user_id, quantity, amount_paid, currency, status, purchased_at, profiles(full_name, email)')
+      .eq('event_id', eventId)
+      .order('purchased_at', { ascending: false })
+
+    if (error) {
+      console.error('[TicketPulse] Failed to load event bookings:', error.message)
+      return []
+    }
+
+    return ((data ?? []) as TicketWithProfile[]).map((row) => {
+      const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+      return {
+        ticketId: row.id,
+        code: row.code,
+        attendeeName: profile?.full_name ?? 'Guest',
+        attendeeEmail: profile?.email ?? '—',
+        quantity: row.quantity,
+        amountPaid: Number(row.amount_paid),
+        currency: row.currency,
+        status: row.status as EventBooking['status'],
+        purchasedAt: row.purchased_at,
+      }
+    })
   },
 }
 

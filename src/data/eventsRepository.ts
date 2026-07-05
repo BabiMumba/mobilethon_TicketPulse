@@ -1,9 +1,30 @@
 import { supabase } from '../lib/supabase'
+import { notifyEventsChanged } from '../lib/eventsNotify'
 import { mapEventRow, mapEventToRow } from '../lib/supabaseMap'
 import type { CreateEventInput, EventFilters, EventItem, EventsRepository } from './types'
 import { SEED_EVENTS } from './seed'
 
+const CUSTOM_EVENTS_KEY = 'tp:events:custom'
+
 const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms))
+
+function readCustomEvents(): EventItem[] {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_EVENTS_KEY) || '[]') as EventItem[]
+  } catch {
+    return []
+  }
+}
+
+function writeCustomEvents(events: EventItem[]): void {
+  localStorage.setItem(CUSTOM_EVENTS_KEY, JSON.stringify(events))
+}
+
+function allMockEvents(): EventItem[] {
+  const custom = readCustomEvents()
+  const seedIds = new Set(SEED_EVENTS.map((e) => e.id))
+  return [...SEED_EVENTS, ...custom.filter((e) => !seedIds.has(e.id))]
+}
 
 function applyFilters(events: EventItem[], filters?: EventFilters): EventItem[] {
   if (!filters) return events
@@ -43,6 +64,7 @@ function buildEvent(input: CreateEventInput, id?: string): EventItem {
     category: input.category,
     imageUrl: input.imageUrl,
     organizer: input.organizer,
+    createdBy: input.createdBy,
     tag: input.tag,
     featured: input.featured ?? false,
   }
@@ -51,19 +73,26 @@ function buildEvent(input: CreateEventInput, id?: string): EventItem {
 const mockEventsRepository: EventsRepository = {
   async list(filters) {
     await delay()
-    return applyFilters(SEED_EVENTS, filters)
+    return applyFilters(allMockEvents(), filters)
   },
   async get(id) {
     await delay(200)
-    return SEED_EVENTS.find((e) => e.id === id) ?? null
+    return allMockEvents().find((e) => e.id === id) ?? null
   },
   async featured() {
     await delay()
-    return SEED_EVENTS.filter((e) => e.featured)
+    return allMockEvents().filter((e) => e.featured)
   },
   async create(input) {
     await delay(300)
-    return buildEvent(input)
+    const event = buildEvent(input)
+    writeCustomEvents([event, ...readCustomEvents()])
+    notifyEventsChanged()
+    return event
+  },
+  async listByOrganizer(userId) {
+    await delay(200)
+    return allMockEvents().filter((e) => e.createdBy === userId)
   },
 }
 
@@ -96,7 +125,21 @@ const supabaseEventsRepository: EventsRepository = {
       .select('*')
       .single()
     if (error) throw new Error(error.message)
-    return mapEventRow(data)
+    const created = mapEventRow(data)
+    notifyEventsChanged()
+    return created
+  },
+  async listByOrganizer(userId) {
+    const { data, error } = await supabase!
+      .from('events')
+      .select('*')
+      .eq('created_by', userId)
+      .order('date', { ascending: true })
+    if (error) {
+      console.error('[TicketPulse] Failed to load organizer events:', error.message)
+      return []
+    }
+    return (data ?? []).map(mapEventRow)
   },
 }
 

@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Search as SearchIcon, SlidersHorizontal, MapPin, CalendarX } from 'lucide-react'
 import type { City, EventCategory, EventItem } from '../data/types'
 import { eventsRepository } from '../data/eventsRepository'
-import ScreenHeader from '../components/ScreenHeader'
-import PageContainer from '../components/PageContainer'
+import PageShell from '../components/PageShell'
 import EventCard from '../components/EventCard'
 import { EventCardSkeleton } from '../components/ui/Skeleton'
+import { EVENTS_CHANGED } from '../lib/eventsNotify'
 
 const CITIES: City[] = ['Lusaka', 'Ndola', 'Kitwe', 'Livingstone']
 const CATEGORIES: EventCategory[] = [
@@ -25,9 +25,16 @@ export default function SearchPage() {
 
   useEffect(() => {
     let active = true
-    eventsRepository.list().then((data) => active && setAllEvents(data))
+    const load = () => {
+      eventsRepository.list().then((data) => {
+        if (active) setAllEvents(data)
+      })
+    }
+    load()
+    window.addEventListener(EVENTS_CHANGED, load)
     return () => {
       active = false
+      window.removeEventListener(EVENTS_CHANGED, load)
     }
   }, [])
 
@@ -51,10 +58,8 @@ export default function SearchPage() {
   }, [allEvents, activeCity, activeCategories, query])
 
   return (
-    <div className="animate-fade-in">
-      <ScreenHeader title="Search" subtitle="Advanced filters across Zambia" />
-
-      <PageContainer className="space-y-6 px-5 py-5">
+    <PageShell title="Search" subtitle="Find events across Zambia">
+      <div className="space-y-6">
         <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
           <SearchIcon size={18} className="text-slate-400" />
           <input
@@ -68,17 +73,16 @@ export default function SearchPage() {
         <section>
           <div className="mb-3 flex items-center gap-2">
             <MapPin size={16} className="text-brand-400" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
-              City
-            </h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">City</h2>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {CITIES.map((city) => (
               <button
                 key={city}
+                type="button"
                 onClick={() => setActiveCity((prev) => (prev === city ? null : city))}
                 className={[
-                  'rounded-2xl border px-4 py-3 text-sm font-medium transition-colors',
+                  'cursor-pointer rounded-2xl border px-4 py-3 text-sm font-medium transition-colors',
                   activeCity === city
                     ? 'border-brand-400 bg-brand-500/15 text-brand-300'
                     : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10',
@@ -103,9 +107,10 @@ export default function SearchPage() {
               return (
                 <button
                   key={c}
+                  type="button"
                   onClick={() => toggleCategory(c)}
                   className={[
-                    'rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
+                    'cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors',
                     active
                       ? 'bg-gradient-to-r from-brand-500 to-emerald-500 text-white'
                       : 'bg-white/5 text-slate-300 hover:bg-white/10',
@@ -134,7 +139,7 @@ export default function SearchPage() {
             </div>
           )}
         </section>
-      </PageContainer>
-    </div>
+      </div>
+    </PageShell>
   )
 }

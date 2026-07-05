@@ -21,6 +21,7 @@ export interface EventItem {
   category: EventCategory
   imageUrl: string
   organizer: string
+  createdBy?: string
   tag?: string
   featured?: boolean
 }
@@ -69,8 +70,28 @@ export interface CreateEventInput {
   category: EventCategory
   imageUrl: string
   organizer: string
+  createdBy?: string
   tag?: string
   featured?: boolean
+}
+
+export interface EventBooking {
+  ticketId: string
+  code: string
+  attendeeName: string
+  attendeeEmail: string
+  quantity: number
+  amountPaid: number
+  currency: string
+  status: TicketStatus
+  purchasedAt: string
+}
+
+export interface EventWithBookings {
+  event: EventItem
+  bookings: EventBooking[]
+  totalTickets: number
+  totalAttendees: number
 }
 
 export interface EventsRepository {
@@ -78,12 +99,14 @@ export interface EventsRepository {
   get(id: string): Promise<EventItem | null>
   featured(): Promise<EventItem[]>
   create(input: CreateEventInput): Promise<EventItem>
+  listByOrganizer(userId: string): Promise<EventItem[]>
 }
 
 export interface TicketsRepository {
   listForUser(userId: string): Promise<Ticket[]>
   get(id: string): Promise<Ticket | null>
   create(input: NewTicketInput): Promise<Ticket>
+  listForEvent(eventId: string): Promise<EventBooking[]>
 }
 
 export interface NewTicketInput {

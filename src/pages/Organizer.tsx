@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { Plus, Ticket } from 'lucide-react'
-import type { City, EventCategory } from '../data/types'
+import { useCallback, useEffect, useState } from 'react'
+import { ChevronDown, ChevronUp, Plus, Ticket, Users } from 'lucide-react'
+import type { City, EventCategory, EventItem, EventWithBookings } from '../data/types'
 import { eventsRepository } from '../data/eventsRepository'
+import { ticketsRepository } from '../data/ticketsRepository'
 import { useAuth } from '../auth/useAuth'
-import ScreenHeader from '../components/ScreenHeader'
-import PageContainer from '../components/PageContainer'
+import PageShell from '../components/PageShell'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Modal from '../components/ui/Modal'
+import { formatEventDate, formatMoney } from '../lib/format'
+import { EVENTS_CHANGED } from '../lib/eventsNotify'
 
 const CITIES: City[] = ['Lusaka', 'Ndola', 'Kitwe', 'Livingstone']
 const CATEGORIES: EventCategory[] = [
@@ -28,6 +30,8 @@ export default function Organizer() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>()
   const [success, setSuccess] = useState<string>()
+  const [myEvents, setMyEvents] = useState<EventWithBookings[] | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -38,6 +42,25 @@ export default function Organizer() {
   const [category, setCategory] = useState<EventCategory>('Music')
   const [imageUrl, setImageUrl] = useState(DEFAULT_IMAGE)
   const [featured, setFeatured] = useState(false)
+
+  const loadMyEvents = useCallback(async () => {
+    if (!user) return
+    const events = await eventsRepository.listByOrganizer(user.id)
+    const withBookings = await Promise.all(
+      events.map(async (event) => {
+        const bookings = await ticketsRepository.listForEvent(event.id)
+        const totalAttendees = bookings.reduce((sum, b) => sum + b.quantity, 0)
+        return { event, bookings, totalTickets: bookings.length, totalAttendees }
+      }),
+    )
+    setMyEvents(withBookings)
+  }, [user])
+
+  useEffect(() => {
+    loadMyEvents()
+    window.addEventListener(EVENTS_CHANGED, loadMyEvents)
+    return () => window.removeEventListener(EVENTS_CHANGED, loadMyEvents)
+  }, [loadMyEvents])
 
   const resetForm = () => {
     setTitle('')
@@ -68,12 +91,14 @@ export default function Organizer() {
         category,
         imageUrl: imageUrl || DEFAULT_IMAGE,
         organizer: user.name ?? user.email ?? 'Organizer',
+        createdBy: user.id,
         tag: Number(price) === 0 ? 'Free' : undefined,
         featured,
       })
-      setSuccess(`"${event.title}" published successfully!`)
+      setSuccess(`"${event.title}" published — visible on Home & Search.`)
       resetForm()
       setOpen(false)
+      await loadMyEvents()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create event.')
     } finally {
@@ -82,34 +107,33 @@ export default function Organizer() {
   }
 
   return (
-    <div className="animate-fade-in">
-      <ScreenHeader
+    <>
+      <PageShell
+        narrow
         title="Organizer"
-        subtitle="Create events — saved to Supabase"
+        subtitle="Create events and track reservations"
         action={
           <Button size="sm" leftIcon={<Plus size={15} />} onClick={() => setOpen(true)}>
             New event
           </Button>
         }
-      />
-
-      <PageContainer className="space-y-6 px-5 py-5 md:max-w-2xl">
+      >
         {success && (
-          <p className="rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-3 text-sm text-accent-200">
+          <p className="mb-6 rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-3 text-sm text-accent-200">
             {success}
           </p>
         )}
 
-        <section className="rounded-3xl border border-white/10 bg-slate-900/60 p-6">
+        <section className="mb-8 rounded-3xl border border-white/10 bg-slate-900/60 p-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-500/15">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-500/15">
               <Ticket size={24} className="text-accent-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold">Publish an event</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Events appear instantly on the home page and search. Set price to{' '}
-                <strong className="text-white">0</strong> for free entry.
+                Saved to Supabase instantly. Price <strong className="text-white">0</strong> = free
+                entry.
               </p>
               <Button className="mt-4" size="sm" onClick={() => setOpen(true)}>
                 Create event
@@ -117,7 +141,37 @@ export default function Organizer() {
             </div>
           </div>
         </section>
-      </PageContainer>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+            My events &amp; bookings
+          </h2>
+
+          {myEvents === null && (
+            <p className="text-sm text-slate-500">Loading your events…</p>
+          )}
+
+          {myEvents?.length === 0 && (
+            <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-8 text-center text-sm text-slate-400">
+              No events yet — create one to see reservations here.
+            </p>
+          )}
+
+          {myEvents?.map(({ event, bookings, totalAttendees, totalTickets }) => (
+            <EventBookingsCard
+              key={event.id}
+              event={event}
+              bookings={bookings}
+              totalAttendees={totalAttendees}
+              totalTickets={totalTickets}
+              expanded={expandedId === event.id}
+              onToggle={() =>
+                setExpandedId((id) => (id === event.id ? null : event.id))
+              }
+            />
+          ))}
+        </section>
+      </PageShell>
 
       <Modal open={open} onClose={() => setOpen(false)} title="New event">
         <form onSubmit={submit} className="space-y-4">
@@ -199,7 +253,7 @@ export default function Organizer() {
               {error}
             </p>
           )}
-          <div className="flex gap-3 pt-2">
+          <div className="sticky bottom-0 flex gap-3 border-t border-white/10 bg-slate-900 pt-4">
             <Button type="button" variant="outline" fullWidth onClick={() => setOpen(false)}>
               Cancel
             </Button>
@@ -209,6 +263,74 @@ export default function Organizer() {
           </div>
         </form>
       </Modal>
-    </div>
+    </>
+  )
+}
+
+function EventBookingsCard({
+  event,
+  bookings,
+  totalAttendees,
+  totalTickets,
+  expanded,
+  onToggle,
+}: {
+  event: EventItem
+  bookings: EventWithBookings['bookings']
+  totalAttendees: number
+  totalTickets: number
+  expanded: boolean
+  onToggle: () => void
+}) {
+  return (
+    <article className="overflow-hidden rounded-2xl border border-white/10 bg-slate-800/50">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full cursor-pointer items-start justify-between gap-3 px-4 py-4 text-left hover:bg-white/5"
+      >
+        <div className="min-w-0">
+          <h3 className="font-semibold text-white">{event.title}</h3>
+          <p className="mt-1 text-xs text-slate-400">
+            {formatEventDate(event.date)} · {event.city} · {formatMoney(event.price, event.currency)}
+          </p>
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-accent-300">
+            <Users size={15} />
+            {totalAttendees} attendee{totalAttendees === 1 ? '' : 's'} · {totalTickets} booking
+            {totalTickets === 1 ? '' : 's'}
+          </p>
+        </div>
+        {expanded ? (
+          <ChevronUp size={18} className="shrink-0 text-slate-400" />
+        ) : (
+          <ChevronDown size={18} className="shrink-0 text-slate-400" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-white/10 px-4 py-3">
+          {bookings.length === 0 ? (
+            <p className="py-3 text-sm text-slate-500">No reservations yet.</p>
+          ) : (
+            <ul className="divide-y divide-white/5">
+              {bookings.map((b) => (
+                <li key={b.ticketId} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                  <div>
+                    <p className="font-medium text-white">{b.attendeeName}</p>
+                    <p className="text-xs text-slate-400">{b.attendeeEmail}</p>
+                  </div>
+                  <div className="text-right text-xs text-slate-400">
+                    <p className="font-mono text-brand-300">{b.code}</p>
+                    <p>
+                      {b.quantity}× · {formatMoney(b.amountPaid, b.currency)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </article>
   )
 }

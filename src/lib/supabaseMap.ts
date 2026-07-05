@@ -14,6 +14,7 @@ type EventRow = {
   organizer: string
   tag?: string | null
   featured?: boolean | null
+  created_by?: string | null
 }
 
 type ProfileRow = {
@@ -55,6 +56,7 @@ export function mapEventRow(row: EventRow): EventItem {
     organizer: row.organizer,
     tag: row.tag ?? undefined,
     featured: row.featured ?? undefined,
+    createdBy: row.created_by ?? undefined,
   }
 }
 
@@ -73,6 +75,7 @@ export function mapEventToRow(event: EventItem) {
     organizer: event.organizer,
     tag: event.tag ?? null,
     featured: event.featured ?? false,
+    created_by: event.createdBy ?? null,
   }
 }
 
