@@ -147,9 +147,13 @@ export default function Organizer() {
     }
   }
 
-  const handleDelete = async (event: EventItem) => {
+  const handleDelete = async (event: EventItem, reservationCount: number) => {
     if (!user) return
-    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return
+    const reservationNote =
+      reservationCount > 0
+        ? `\n\n${reservationCount} reservation${reservationCount === 1 ? '' : 's'} will also be removed.`
+        : ''
+    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.${reservationNote}`)) return
     try {
       await eventsRepository.delete(event.id, user.id)
       setSuccess(`"${event.title}" deleted.`)
@@ -223,7 +227,7 @@ export default function Organizer() {
               expanded={expandedId === event.id}
               onToggle={() => setExpandedId((id) => (id === event.id ? null : event.id))}
               onEdit={() => openEdit(event)}
-              onDelete={() => handleDelete(event)}
+              onDelete={() => handleDelete(event, totalTickets)}
             />
           ))}
         </section>

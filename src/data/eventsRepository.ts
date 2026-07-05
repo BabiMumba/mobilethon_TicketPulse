@@ -171,7 +171,14 @@ const supabaseEventsRepository: EventsRepository = {
   },
   async delete(id, userId) {
     const { error } = await supabase!.from('events').delete().eq('id', id).eq('created_by', userId)
-    if (error) throw new Error(error.message)
+    if (error) {
+      if (error.code === '23503') {
+        throw new Error(
+          'This event still has ticket reservations. Redeploy the latest version or run migration 011 on Supabase.',
+        )
+      }
+      throw new Error(error.message)
+    }
     notifyEventsChanged()
   },
   async listByOrganizer(userId, fallbackName) {
