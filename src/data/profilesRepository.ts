@@ -44,11 +44,11 @@ const supabaseProfilesRepository: ProfilesRepository = {
     return profile
   },
   async upsert(profile) {
+    const { error } = await supabase!.from('profiles').upsert(mapProfileToRow(profile), {
+      onConflict: 'id',
+    })
+    if (error) throw new Error(error.message)
     writeCache(profile)
-    const { error } = await supabase!.from('profiles').upsert(mapProfileToRow(profile))
-    if (error) {
-      console.warn('[TicketPulse] Profile cached locally; will sync when online.', error)
-    }
     return profile
   },
 }

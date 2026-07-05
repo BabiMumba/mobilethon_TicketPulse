@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { mapTicketRow, mapTicketToRow } from '../lib/supabaseMap'
+import { profilesRepository } from './profilesRepository'
 import type { EventBooking, NewTicketInput, Ticket, TicketsRepository } from './types'
 
 const CACHE_PREFIX = 'tp:tickets:'
@@ -142,6 +143,21 @@ const supabaseTicketsRepository: TicketsRepository = {
     return mapTicketRow(data)
   },
   async create(input) {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase!.auth.getUser()
+    if (authError || !user || user.id !== input.userId) {
+      throw new Error('You must be logged in to reserve a ticket.')
+    }
+
+    const meta = user.user_metadata as { full_name?: string; name?: string }
+    await profilesRepository.upsert({
+      id: user.id,
+      fullName: meta.full_name ?? meta.name ?? user.email?.split('@')[0] ?? 'User',
+      email: user.email ?? '',
+    })
+
     const ticket = buildTicket(input)
     const { error } = await supabase!.from('tickets').insert(mapTicketToRow(ticket))
     if (error) throw new Error(error.message)
