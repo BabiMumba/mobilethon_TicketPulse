@@ -56,6 +56,30 @@
     animation-delay: 500ms;
   }
 
+  .confetti-piece {
+    animation-name: confetti-fall;
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      transform: translate3d(0, -10vh, 0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(var(--confetti-drift, 0px), 110vh, 0) rotate(720deg);
+      opacity: 0.2;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .confetti-piece {
+      animation: none;
+      opacity: 0;
+    }
+  }
+
   /* Skeleton shimmer for loading states. */
   .skeleton {
     position: relative;
