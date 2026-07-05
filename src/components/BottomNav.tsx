@@ -1,20 +1,26 @@
 import { NavLink } from 'react-router-dom'
-import { NAV_ITEMS } from '../navigation'
+import { visibleNavItems } from '../navigation'
+import { useAuth } from '../auth/useAuth'
 
 /**
- * Fixed bottom navigation bar. It is pinned to the bottom of the centered
- * mobile viewport wrapper (max-w-md), not the full window, so it lines up with
- * the app shell on larger screens too. Active tabs are highlighted via
- * `NavLink`'s active state.
+ * Fixed bottom navigation bar — the native-feeling mobile experience. Hidden on
+ * desktop (md+), where the sticky top header takes over. Items are filtered by
+ * the current auth session.
  */
 export default function BottomNav() {
+  const { user } = useAuth()
+  const items = visibleNavItems(Boolean(user))
+
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 border-t border-white/10 bg-slate-900/90 backdrop-blur-lg safe-bottom"
+      className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 border-t border-white/10 bg-slate-900/90 backdrop-blur-lg safe-bottom md:hidden"
     >
-      <ul className="grid grid-cols-5">
-        {NAV_ITEMS.map(({ to, label, description, icon: Icon }) => (
+      <ul
+        className="grid"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
+        {items.map(({ to, label, description, icon: Icon }) => (
           <li key={to}>
             <NavLink
               to={to}
@@ -28,21 +34,13 @@ export default function BottomNav() {
                     className={[
                       'relative flex h-9 w-12 items-center justify-center rounded-2xl transition-all duration-200',
                       isActive
-                        ? 'bg-gradient-to-br from-brand-500/25 to-accent-500/25 text-brand-400 shadow-glow'
+                        ? 'bg-gradient-to-br from-brand-500/25 to-emerald-500/25 text-brand-400 shadow-glow'
                         : 'text-slate-400 group-hover:text-slate-200',
                     ].join(' ')}
                   >
-                    <Icon
-                      size={22}
-                      strokeWidth={isActive ? 2.4 : 2}
-                      aria-hidden="true"
-                    />
+                    <Icon size={22} strokeWidth={isActive ? 2.4 : 2} aria-hidden="true" />
                   </span>
-                  <span
-                    className={
-                      isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-200'
-                    }
-                  >
+                  <span className={isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-200'}>
                     {label}
                   </span>
                 </>

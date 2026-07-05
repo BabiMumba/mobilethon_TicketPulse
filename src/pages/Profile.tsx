@@ -1,13 +1,17 @@
+import { useNavigate } from 'react-router-dom'
 import {
-  User,
   Bell,
   CreditCard,
   Globe,
   ShieldCheck,
   ChevronRight,
   LogOut,
+  Database,
 } from 'lucide-react'
+import { useAuth } from '../auth/useAuth'
 import ScreenHeader from '../components/ScreenHeader'
+import PageContainer from '../components/PageContainer'
+import Button from '../components/ui/Button'
 
 const SETTINGS = [
   { label: 'Notifications', icon: Bell },
@@ -17,22 +21,38 @@ const SETTINGS = [
 ]
 
 export default function Profile() {
+  const { user, signOut, usingSupabase } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/')
+  }
+
+  const displayName = user?.name || user?.email || user?.phone || 'Member'
+  const initials = displayName.slice(0, 2).toUpperCase()
+
   return (
     <div className="animate-fade-in">
       <ScreenHeader title="Profile" subtitle="Manage your account" />
 
-      <div className="space-y-6 px-5 py-5">
-        <section className="flex items-center gap-4 rounded-3xl border border-white/10 bg-gradient-to-br from-brand-500/15 to-accent-500/15 p-5">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-2xl font-bold">
-            CZ
+      <PageContainer className="space-y-6 px-5 py-5 md:max-w-2xl">
+        <section className="flex items-center gap-4 rounded-3xl border border-white/10 bg-gradient-to-br from-brand-500/15 to-emerald-500/15 p-5">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-emerald-500 text-2xl font-bold">
+            {initials}
           </div>
-          <div>
-            <h2 className="text-lg font-bold">Chanda Zulu</h2>
-            <p className="text-sm text-slate-400">chanda.zulu@example.zm</p>
-            <span className="mt-1 inline-block rounded-full bg-brand-500/20 px-2.5 py-0.5 text-[11px] font-medium text-brand-300">
-              Lusaka, Zambia
-            </span>
+          <div className="min-w-0">
+            <h2 className="truncate text-lg font-bold">{displayName}</h2>
+            {user?.email && <p className="truncate text-sm text-slate-400">{user.email}</p>}
+            {user?.phone && <p className="text-sm text-slate-400">{user.phone}</p>}
           </div>
+        </section>
+
+        <section className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-400">
+          <Database size={14} className={usingSupabase ? 'text-emerald-400' : 'text-amber-400'} />
+          {usingSupabase
+            ? 'Connected to Supabase.'
+            : 'Running on the local mock backend — set Supabase env vars to sync.'}
         </section>
 
         <section className="overflow-hidden rounded-3xl border border-white/10 bg-slate-800/60">
@@ -51,14 +71,18 @@ export default function Profile() {
           ))}
         </section>
 
-        <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 py-3.5 text-sm font-semibold text-red-300 transition-colors hover:bg-red-500/20">
-          <LogOut size={16} /> Sign out
-        </button>
+        <Button
+          variant="outline"
+          fullWidth
+          leftIcon={<LogOut size={16} />}
+          className="border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+          onClick={handleSignOut}
+        >
+          Sign out
+        </Button>
 
-        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-slate-500">
-          <User size={12} /> TicketPulse Zambia • v0.1.0
-        </p>
-      </div>
+        <p className="text-center text-xs text-slate-500">TicketPulse Zambia • v0.2.0</p>
+      </PageContainer>
     </div>
   )
 }

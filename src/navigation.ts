@@ -2,13 +2,14 @@ import type { LucideIcon } from 'lucide-react'
 import { Home, Search, Ticket, LineChart, User } from 'lucide-react'
 
 export interface NavItem {
-  /** Route path used by react-router. */
   to: string
-  /** Visible label in the bottom navigation. */
   label: string
-  /** Accessible / descriptive purpose of the tab. */
+  /** Shorter label used on the desktop header where space allows more detail. */
+  desktopLabel?: string
   description: string
   icon: LucideIcon
+  /** Only shown to authenticated users. */
+  requiresAuth?: boolean
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -29,17 +30,26 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'My Tickets',
     description: 'Offline-ready digital passes & QR codes',
     icon: Ticket,
+    requiresAuth: true,
   },
   {
     to: '/organizer',
     label: 'Organizer',
+    desktopLabel: 'Organizer Dashboard',
     description: 'Event creation & sales charts',
     icon: LineChart,
+    requiresAuth: true,
   },
   {
     to: '/profile',
     label: 'Profile',
     description: 'Your account & preferences',
     icon: User,
+    requiresAuth: true,
   },
 ]
+
+/** Returns the nav items visible for the current auth state. */
+export function visibleNavItems(isAuthed: boolean): NavItem[] {
+  return NAV_ITEMS.filter((item) => !item.requiresAuth || isAuthed)
+}
