@@ -16,6 +16,9 @@ export function authErrorMessage(error: AuthError): string {
       ? 'Incorrect email or password. If you just signed up, confirm your email in Supabase first.'
       : 'Incorrect email or password.'
   }
+  if (code === 'user_already_exists') {
+    return 'This email is already registered. Log in with your password instead.'
+  }
   const msg = error.message?.trim()
   if (msg === 'Failed to fetch' || msg === 'NetworkError when attempting to fetch resource.') {
     return 'Cannot reach Supabase. Check your connection, disable ad blockers, and verify VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY on Vercel (then redeploy).'

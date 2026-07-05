@@ -24,6 +24,7 @@ type ProfileRow = {
   phone?: string | null
   city?: string | null
   is_organizer?: boolean | null
+  updated_at?: string
 }
 
 type TicketRow = {
@@ -98,6 +99,7 @@ export function mapProfileToRow(profile: Profile): ProfileRow {
     phone: profile.phone ?? null,
     city: profile.city ?? null,
     is_organizer: profile.isOrganizer ?? false,
+    updated_at: new Date().toISOString(),
   }
 }
 
