@@ -37,9 +37,8 @@ export const mockAuth = {
   },
 
   async signInWithPassword(email: string, password: string): Promise<AuthResult> {
-    const user = readUsers().find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase(),
-    )
+    const normalized = email.trim().toLowerCase()
+    const user = readUsers().find((u) => u.email?.toLowerCase() === normalized)
     if (!user || user.password !== password) {
       return { ok: false, error: 'Invalid email or password.' }
     }
@@ -58,7 +57,7 @@ export const mockAuth = {
     }
     const user: StoredUser = {
       id: `usr_${Math.random().toString(36).slice(2, 10)}`,
-      email: input.email,
+      email: input.email.trim().toLowerCase(),
       name: input.name,
       password: input.password,
     }

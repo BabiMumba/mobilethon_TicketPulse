@@ -99,7 +99,9 @@ export interface EventsRepository {
   get(id: string): Promise<EventItem | null>
   featured(): Promise<EventItem[]>
   create(input: CreateEventInput): Promise<EventItem>
-  listByOrganizer(userId: string): Promise<EventItem[]>
+  update(id: string, input: CreateEventInput): Promise<EventItem>
+  delete(id: string, userId: string): Promise<void>
+  listByOrganizer(userId: string, fallbackName?: string): Promise<EventItem[]>
 }
 
 export interface TicketsRepository {

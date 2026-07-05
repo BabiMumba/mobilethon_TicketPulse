@@ -65,9 +65,15 @@ function buildEvent(input: CreateEventInput, id?: string): EventItem {
     imageUrl: input.imageUrl,
     organizer: input.organizer,
     createdBy: input.createdBy,
-    tag: input.tag,
+    tag: input.tag ?? (input.price === 0 ? 'Free' : undefined),
     featured: input.featured ?? false,
   }
+}
+
+function ownsEvent(event: EventItem, userId: string, fallbackName?: string): boolean {
+  if (event.createdBy === userId) return true
+  if (!event.createdBy && fallbackName && event.organizer === fallbackName) return true
+  return false
 }
 
 const mockEventsRepository: EventsRepository = {
@@ -90,9 +96,30 @@ const mockEventsRepository: EventsRepository = {
     notifyEventsChanged()
     return event
   },
-  async listByOrganizer(userId) {
+  async update(id, input) {
+    await delay(300)
+    const custom = readCustomEvents()
+    const idx = custom.findIndex((e) => e.id === id)
+    if (idx === -1) throw new Error('Event not found or cannot be edited.')
+    const updated = buildEvent({ ...input, createdBy: input.createdBy ?? custom[idx].createdBy }, id)
+    custom[idx] = updated
+    writeCustomEvents(custom)
+    notifyEventsChanged()
+    return updated
+  },
+  async delete(id, userId) {
     await delay(200)
-    return allMockEvents().filter((e) => e.createdBy === userId)
+    const custom = readCustomEvents()
+    const event = custom.find((e) => e.id === id)
+    if (!event || event.createdBy !== userId) {
+      throw new Error('Event not found or cannot be deleted.')
+    }
+    writeCustomEvents(custom.filter((e) => e.id !== id))
+    notifyEventsChanged()
+  },
+  async listByOrganizer(userId, fallbackName) {
+    await delay(200)
+    return allMockEvents().filter((e) => ownsEvent(e, userId, fallbackName))
   },
 }
 
@@ -129,17 +156,52 @@ const supabaseEventsRepository: EventsRepository = {
     notifyEventsChanged()
     return created
   },
-  async listByOrganizer(userId) {
+  async update(id, input) {
+    const event = buildEvent(input, id)
     const { data, error } = await supabase!
+      .from('events')
+      .update(mapEventToRow(event))
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw new Error(error.message)
+    const updated = mapEventRow(data)
+    notifyEventsChanged()
+    return updated
+  },
+  async delete(id, userId) {
+    const { error } = await supabase!.from('events').delete().eq('id', id).eq('created_by', userId)
+    if (error) throw new Error(error.message)
+    notifyEventsChanged()
+  },
+  async listByOrganizer(userId, fallbackName) {
+    const { data: byCreator, error: e1 } = await supabase!
       .from('events')
       .select('*')
       .eq('created_by', userId)
       .order('date', { ascending: true })
-    if (error) {
-      console.error('[TicketPulse] Failed to load organizer events:', error.message)
+
+    if (e1) {
+      console.error('[TicketPulse] Failed to load organizer events:', e1.message)
       return []
     }
-    return (data ?? []).map(mapEventRow)
+
+    let events = (byCreator ?? []).map(mapEventRow)
+
+    if (fallbackName) {
+      const { data: legacy } = await supabase!
+        .from('events')
+        .select('*')
+        .is('created_by', null)
+        .eq('organizer', fallbackName)
+        .order('date', { ascending: true })
+      if (legacy?.length) {
+        const ids = new Set(events.map((e) => e.id))
+        events = [...events, ...legacy.map(mapEventRow).filter((e) => !ids.has(e.id))]
+      }
+    }
+
+    return events
   },
 }
 

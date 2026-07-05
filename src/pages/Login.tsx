@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Mail, Lock } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
+import { mockLoginHint } from '../auth/authErrors'
 import AuthShell from '../components/AuthShell'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 
 export default function Login() {
-  const { signInWithPassword } = useAuth()
+  const { signInWithPassword, usingSupabase } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string })?.from ?? '/'
@@ -67,6 +68,9 @@ export default function Login() {
           <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
             {error}
           </p>
+        )}
+        {!usingSupabase && !error && (
+          <p className="text-xs text-amber-400/90">{mockLoginHint()}</p>
         )}
         <Button type="submit" fullWidth size="lg" loading={loading}>
           Log in
