@@ -17,11 +17,13 @@ export default function Register() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string>()
+  const [success, setSuccess] = useState<string>()
   const [loading, setLoading] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(undefined)
+    setSuccess(undefined)
     if (password.length < 6) {
       setError('Password must be at least 6 characters.')
       return
@@ -29,8 +31,13 @@ export default function Register() {
     setLoading(true)
     const res = await signUp({ name, email, password, phone: phone || undefined })
     setLoading(false)
-    if (res.ok) navigate(from, { replace: true })
-    else setError(res.error)
+    if (res.ok) {
+      if (res.needsEmailConfirmation) {
+        setSuccess('Account created! Check your email to confirm, then log in.')
+        return
+      }
+      navigate(from, { replace: true })
+    } else setError(res.error)
   }
 
   return (
@@ -84,8 +91,17 @@ export default function Register() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           icon={<Lock size={16} />}
-          error={error}
         />
+        {success && (
+          <p className="rounded-xl border border-accent-500/30 bg-accent-500/10 px-4 py-3 text-sm text-accent-200">
+            {success}
+          </p>
+        )}
+        {error && (
+          <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            {error}
+          </p>
+        )}
         <Button type="submit" fullWidth size="lg" loading={loading}>
           Create account
         </Button>

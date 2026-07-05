@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { mapTicketRow, mapTicketToRow } from '../lib/supabaseMap'
 import type { NewTicketInput, Ticket, TicketsRepository } from './types'
 
 const CACHE_PREFIX = 'tp:tickets:'
@@ -88,19 +89,19 @@ const supabaseTicketsRepository: TicketsRepository = {
       .select('*')
       .eq('user_id', userId)
       .order('purchased_at', { ascending: false })
-    if (error || !data) return readCache(userId) // offline fallback
-    const tickets = data as unknown as Ticket[]
+    if (error || !data) return readCache(userId)
+    const tickets = data.map(mapTicketRow)
     writeCache(userId, tickets)
     return tickets
   },
   async get(id) {
     const { data, error } = await supabase!.from('tickets').select('*').eq('id', id).single()
     if (error || !data) return mockTicketsRepository.get(id)
-    return data as unknown as Ticket
+    return mapTicketRow(data)
   },
   async create(input) {
     const ticket = buildTicket(input)
-    const { error } = await supabase!.from('tickets').insert(ticket)
+    const { error } = await supabase!.from('tickets').insert(mapTicketToRow(ticket))
     // Always cache locally regardless of network result.
     writeCache(input.userId, [ticket, ...readCache(input.userId)])
     if (error) {

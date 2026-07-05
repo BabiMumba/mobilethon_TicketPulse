@@ -7,7 +7,7 @@ export default function EventCard({ event }: { event: EventItem }) {
   return (
     <Link
       to={`/events/${event.id}`}
-      className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-800/60 transition-all duration-200 hover:-translate-y-1 hover:border-brand-400/40 hover:shadow-glow"
+      className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-slate-900/70 transition-all duration-200 hover:-translate-y-1 hover:border-accent-500/30 hover:shadow-glow-emerald"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
         <img
@@ -22,7 +22,7 @@ export default function EventCard({ event }: { event: EventItem }) {
             {event.tag}
           </span>
         )}
-        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/70 px-2.5 py-1 text-sm font-bold text-emerald-400 backdrop-blur">
+        <span className="absolute bottom-3 right-3 rounded-xl bg-slate-950/80 px-3 py-1.5 text-sm font-bold text-accent-400 backdrop-blur">
           {formatMoney(event.price, event.currency)}
         </span>
       </div>

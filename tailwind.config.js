@@ -4,7 +4,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary accent = electric violet, secondary accent = emerald green.
         brand: {
           DEFAULT: '#a855f7',
           50: '#faf5ff',
@@ -15,15 +14,16 @@ export default {
           700: '#7e22ce',
         },
         accent: {
-          DEFAULT: '#10b981',
-          300: '#6ee7b7',
-          400: '#34d399',
-          500: '#10b981',
-          600: '#059669',
+          DEFAULT: '#16a34a',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#16a34a',
+          600: '#15803d',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', 'sans-serif'],
+        display: ['Righteous', 'Poppins', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         glow: '0 0 24px rgba(168, 85, 247, 0.35)',

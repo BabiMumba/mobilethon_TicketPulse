@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { mapProfileRow, mapProfileToRow } from '../lib/supabaseMap'
 import type { Profile, ProfilesRepository } from './types'
 
 const CACHE_PREFIX = 'tp:profile:'
@@ -38,13 +39,13 @@ const supabaseProfilesRepository: ProfilesRepository = {
       .eq('id', userId)
       .single()
     if (error || !data) return readCache(userId)
-    const profile = data as unknown as Profile
+    const profile = mapProfileRow(data)
     writeCache(profile)
     return profile
   },
   async upsert(profile) {
     writeCache(profile)
-    const { error } = await supabase!.from('profiles').upsert(profile)
+    const { error } = await supabase!.from('profiles').upsert(mapProfileToRow(profile))
     if (error) {
       console.warn('[TicketPulse] Profile cached locally; will sync when online.', error)
     }

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { mapEventRow } from '../lib/supabaseMap'
 import type { EventFilters, EventItem, EventsRepository } from './types'
 import { SEED_EVENTS } from './seed'
 
@@ -44,18 +45,18 @@ const supabaseEventsRepository: EventsRepository = {
     let query = supabase!.from('events').select('*').order('date', { ascending: true })
     if (filters?.city) query = query.eq('city', filters.city)
     const { data, error } = await query
-    if (error || !data) return applyFilters(SEED_EVENTS, filters)
-    return applyFilters(data as unknown as EventItem[], filters)
+    if (error || !data?.length) return applyFilters(SEED_EVENTS, filters)
+    return applyFilters(data.map(mapEventRow), filters)
   },
   async get(id) {
     const { data, error } = await supabase!.from('events').select('*').eq('id', id).single()
     if (error || !data) return SEED_EVENTS.find((e) => e.id === id) ?? null
-    return data as unknown as EventItem
+    return mapEventRow(data)
   },
   async featured() {
     const { data, error } = await supabase!.from('events').select('*').eq('featured', true)
-    if (error || !data) return SEED_EVENTS.filter((e) => e.featured)
-    return data as unknown as EventItem[]
+    if (error || !data?.length) return SEED_EVENTS.filter((e) => e.featured)
+    return data.map(mapEventRow)
   },
 }
 

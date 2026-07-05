@@ -8,6 +8,8 @@ export interface AuthUser {
 export interface AuthResult {
   ok: boolean
   error?: string
+  /** Supabase email confirmation enabled — user must verify inbox before login. */
+  needsEmailConfirmation?: boolean
 }
 
 export interface AuthContextValue {

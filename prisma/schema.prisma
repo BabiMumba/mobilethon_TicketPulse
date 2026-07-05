@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Event {
+  id          String   @id
+  title       String
+  description String
+  city        String
+  venue       String
+  date        DateTime @db.Timestamptz(6)
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("ZMW")
+  category    String
+  imageUrl    String   @map("image_url")
+  organizer   String
+  tag         String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tickets Ticket[]
+
+  @@map("events")
+}
+
+model Profile {
+  id          String   @id @db.Uuid
+  fullName    String   @map("full_name")
+  email       String
+  phone       String?
+  city        String?
+  isOrganizer Boolean  @default(false) @map("is_organizer")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("profiles")
+}
+
+model Ticket {
+  id          String   @id
+  code        String   @unique
+  eventId     String   @map("event_id")
+  userId      String   @map("user_id") @db.Uuid
+  type        String
+  seat        String
+  quantity    Int
+  amountPaid  Decimal  @map("amount_paid") @db.Decimal(10, 2)
+  currency    String   @default("ZMW")
+  status      String   @default("valid")
+  purchasedAt DateTime @default(now()) @map("purchased_at") @db.Timestamptz(6)
+  event       Json
+
+  eventRef Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("tickets")
+}
