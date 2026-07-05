@@ -3,8 +3,8 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 // Supabase is configured entirely through Vite env vars. When they are absent
 // (e.g. local hackathon dev, or before you run `supabase` setup) the app
 // transparently falls back to a fully-featured mock backend, so nothing breaks.
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
+const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
 
 export const isSupabaseConfigured = Boolean(url && anonKey)
 

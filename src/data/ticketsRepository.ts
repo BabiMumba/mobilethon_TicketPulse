@@ -104,7 +104,7 @@ const mockTicketsRepository: TicketsRepository = {
   },
 }
 
-type TicketWithProfile = {
+type TicketRowSummary = {
   id: string
   code: string
   user_id: string
@@ -113,7 +113,12 @@ type TicketWithProfile = {
   currency: string
   status: string
   purchased_at: string
-  profiles: { full_name: string; email: string } | { full_name: string; email: string }[] | null
+}
+
+type ProfileSummary = {
+  id: string
+  full_name: string
+  email: string
 }
 
 const supabaseTicketsRepository: TicketsRepository = {
@@ -144,9 +149,9 @@ const supabaseTicketsRepository: TicketsRepository = {
     return ticket
   },
   async listForEvent(eventId) {
-    const { data, error } = await supabase!
+    const { data: ticketRows, error } = await supabase!
       .from('tickets')
-      .select('id, code, user_id, quantity, amount_paid, currency, status, purchased_at, profiles(full_name, email)')
+      .select('id, code, user_id, quantity, amount_paid, currency, status, purchased_at')
       .eq('event_id', eventId)
       .order('purchased_at', { ascending: false })
 
@@ -155,8 +160,25 @@ const supabaseTicketsRepository: TicketsRepository = {
       return []
     }
 
-    return ((data ?? []) as TicketWithProfile[]).map((row) => {
-      const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+    const rows = (ticketRows ?? []) as TicketRowSummary[]
+    if (rows.length === 0) return []
+
+    const userIds = [...new Set(rows.map((r) => r.user_id))]
+    const { data: profileRows, error: profileError } = await supabase!
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', userIds)
+
+    if (profileError) {
+      console.warn('[TicketPulse] Could not load attendee profiles:', profileError.message)
+    }
+
+    const profileById = new Map(
+      ((profileRows ?? []) as ProfileSummary[]).map((p) => [p.id, p]),
+    )
+
+    return rows.map((row) => {
+      const profile = profileById.get(row.user_id)
       return {
         ticketId: row.id,
         code: row.code,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { User } from '@supabase/supabase-js'
+import type { AuthError, User } from '@supabase/supabase-js'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { profilesRepository } from '../data/profilesRepository'
 import { authErrorMessage, normalizeEmail } from './authErrors'
@@ -62,41 +62,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string): Promise<AuthResult> => {
       const normalized = normalizeEmail(email)
       if (supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: normalized,
-          password,
-        })
-        if (error) return { ok: false, error: authErrorMessage(error) }
-        if (data.user) setUser(mapUser(data.user))
-        return { ok: true }
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: normalized,
+            password,
+          })
+          if (error) return { ok: false, error: authErrorMessage(error) }
+          if (data.user) {
+            await syncProfile(data.user)
+            setUser(mapUser(data.user))
+          }
+          return { ok: true }
+        } catch (err) {
+          const message =
+            err instanceof Error ? err.message : 'Authentication failed. Please try again.'
+          return {
+            ok: false,
+            error: authErrorMessage({ message, name: 'AuthError', status: 0 } as AuthError),
+          }
+        }
       }
       const res = await mockAuth.signInWithPassword(normalized, password)
       if (res.ok) setUser(mockAuth.current())
       return res
     },
-    [],
+    [syncProfile],
   )
 
   const signUp = useCallback(
     async (input: { email: string; password: string; name: string }): Promise<AuthResult> => {
       const normalized = normalizeEmail(input.email)
       if (supabase) {
-        const { data, error } = await supabase.auth.signUp({
-          email: normalized,
-          password: input.password,
-          options: { data: { full_name: input.name } },
-        })
-        if (error) return { ok: false, error: authErrorMessage(error) }
-
-        if (data.user && data.session) {
-          await profilesRepository.upsert({
-            id: data.user.id,
-            fullName: input.name,
+        try {
+          const { data, error } = await supabase.auth.signUp({
             email: normalized,
+            password: input.password,
+            options: { data: { full_name: input.name } },
           })
-          setUser(mapUser(data.user))
+          if (error) return { ok: false, error: authErrorMessage(error) }
+
+          if (data.user && data.session) {
+            await profilesRepository.upsert({
+              id: data.user.id,
+              fullName: input.name,
+              email: normalized,
+            })
+            setUser(mapUser(data.user))
+          }
+          return { ok: true, needsEmailConfirmation: Boolean(data.user && !data.session) }
+        } catch (err) {
+          const message =
+            err instanceof Error ? err.message : 'Registration failed. Please try again.'
+          return {
+            ok: false,
+            error: authErrorMessage({ message, name: 'AuthError', status: 0 } as AuthError),
+          }
         }
-        return { ok: true, needsEmailConfirmation: Boolean(data.user && !data.session) }
       }
       const res = await mockAuth.signUp({ ...input, email: normalized })
       if (res.ok) setUser(mockAuth.current())
