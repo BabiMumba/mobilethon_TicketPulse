@@ -34,8 +34,7 @@ export default function AuthShell({
               Your gateway to Zambia's biggest events.
             </h2>
             <p className="mt-3 max-w-sm text-slate-300">
-              Buy tickets, pay with mobile money, and keep offline-ready passes for the
-              gate.
+              Discover events, book free or paid tickets, and manage your passes in one place.
             </p>
           </div>
         </div>

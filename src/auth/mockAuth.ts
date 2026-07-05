@@ -1,9 +1,5 @@
 import type { AuthResult, AuthUser } from './types'
 
-// A tiny localStorage-backed auth backend used when Supabase is not configured.
-// It mirrors the shape of the Supabase flows so swapping in the real client is
-// seamless. NOT secure — for local/hackathon demos only.
-
 const USERS_KEY = 'tp:auth:users'
 const SESSION_KEY = 'tp:auth:session'
 
@@ -24,7 +20,7 @@ function writeUsers(users: StoredUser[]): void {
 }
 
 function publicUser(u: StoredUser): AuthUser {
-  return { id: u.id, email: u.email, phone: u.phone, name: u.name }
+  return { id: u.id, email: u.email, name: u.name }
 }
 
 function setSession(userId: string | null): void {
@@ -55,7 +51,6 @@ export const mockAuth = {
     email: string
     password: string
     name: string
-    phone?: string
   }): Promise<AuthResult> {
     const users = readUsers()
     if (users.some((u) => u.email?.toLowerCase() === input.email.toLowerCase())) {
@@ -65,33 +60,9 @@ export const mockAuth = {
       id: `usr_${Math.random().toString(36).slice(2, 10)}`,
       email: input.email,
       name: input.name,
-      phone: input.phone,
       password: input.password,
     }
     writeUsers([...users, user])
-    setSession(user.id)
-    return { ok: true }
-  },
-
-  async startPhoneOtp(): Promise<AuthResult> {
-    // Mock: pretend the SMS was sent. Demo code is 123456.
-    return { ok: true }
-  },
-
-  async verifyPhoneOtp(phone: string, code: string): Promise<AuthResult> {
-    if (!/^\d{6}$/.test(code)) {
-      return { ok: false, error: 'Enter the 6-digit code.' }
-    }
-    const users = readUsers()
-    let user = users.find((u) => u.phone === phone)
-    if (!user) {
-      user = {
-        id: `usr_${Math.random().toString(36).slice(2, 10)}`,
-        phone,
-        name: 'Zambia Member',
-      }
-      writeUsers([...users, user])
-    }
     setSession(user.id)
     return { ok: true }
   },

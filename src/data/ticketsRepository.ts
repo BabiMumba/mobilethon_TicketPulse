@@ -89,24 +89,24 @@ const supabaseTicketsRepository: TicketsRepository = {
       .select('*')
       .eq('user_id', userId)
       .order('purchased_at', { ascending: false })
-    if (error || !data) return readCache(userId)
-    const tickets = data.map(mapTicketRow)
+    if (error) {
+      console.error('[TicketPulse] Failed to load tickets:', error.message)
+      return []
+    }
+    const tickets = (data ?? []).map(mapTicketRow)
     writeCache(userId, tickets)
     return tickets
   },
   async get(id) {
     const { data, error } = await supabase!.from('tickets').select('*').eq('id', id).single()
-    if (error || !data) return mockTicketsRepository.get(id)
+    if (error || !data) return null
     return mapTicketRow(data)
   },
   async create(input) {
     const ticket = buildTicket(input)
     const { error } = await supabase!.from('tickets').insert(mapTicketToRow(ticket))
-    // Always cache locally regardless of network result.
+    if (error) throw new Error(error.message)
     writeCache(input.userId, [ticket, ...readCache(input.userId)])
-    if (error) {
-      console.warn('[TicketPulse] Ticket saved offline; will sync when online.', error)
-    }
     return ticket
   },
 }

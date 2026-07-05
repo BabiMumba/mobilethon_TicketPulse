@@ -1,9 +1,8 @@
 import { supabase } from '../lib/supabase'
-import { mapEventRow } from '../lib/supabaseMap'
-import type { EventFilters, EventItem, EventsRepository } from './types'
+import { mapEventRow, mapEventToRow } from '../lib/supabaseMap'
+import type { CreateEventInput, EventFilters, EventItem, EventsRepository } from './types'
 import { SEED_EVENTS } from './seed'
 
-// Small artificial latency so skeleton loading states are exercised in dev.
 const delay = (ms = 350) => new Promise((r) => setTimeout(r, ms))
 
 function applyFilters(events: EventItem[], filters?: EventFilters): EventItem[] {
@@ -22,6 +21,33 @@ function applyFilters(events: EventItem[], filters?: EventFilters): EventItem[] 
   })
 }
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40)
+}
+
+function buildEvent(input: CreateEventInput, id?: string): EventItem {
+  const eventId = id ?? `evt-${slugify(input.title)}-${Date.now()}`
+  return {
+    id: eventId,
+    title: input.title,
+    description: input.description,
+    city: input.city,
+    venue: input.venue,
+    date: input.date,
+    price: input.price,
+    currency: input.currency ?? 'ZMW',
+    category: input.category,
+    imageUrl: input.imageUrl,
+    organizer: input.organizer,
+    tag: input.tag,
+    featured: input.featured ?? false,
+  }
+}
+
 const mockEventsRepository: EventsRepository = {
   async list(filters) {
     await delay()
@@ -35,28 +61,42 @@ const mockEventsRepository: EventsRepository = {
     await delay()
     return SEED_EVENTS.filter((e) => e.featured)
   },
+  async create(input) {
+    await delay(300)
+    return buildEvent(input)
+  },
 }
 
-// Supabase-backed implementation. Expects an `events` table whose columns map
-// to EventItem (snake_case). Falls back to seed data if the query fails so the
-// UI never hard-crashes during a hackathon demo.
 const supabaseEventsRepository: EventsRepository = {
   async list(filters) {
     let query = supabase!.from('events').select('*').order('date', { ascending: true })
     if (filters?.city) query = query.eq('city', filters.city)
     const { data, error } = await query
-    if (error || !data?.length) return applyFilters(SEED_EVENTS, filters)
-    return applyFilters(data.map(mapEventRow), filters)
+    if (error) {
+      console.error('[TicketPulse] Failed to load events:', error.message)
+      return []
+    }
+    return applyFilters((data ?? []).map(mapEventRow), filters)
   },
   async get(id) {
     const { data, error } = await supabase!.from('events').select('*').eq('id', id).single()
-    if (error || !data) return SEED_EVENTS.find((e) => e.id === id) ?? null
+    if (error || !data) return null
     return mapEventRow(data)
   },
   async featured() {
     const { data, error } = await supabase!.from('events').select('*').eq('featured', true)
-    if (error || !data?.length) return SEED_EVENTS.filter((e) => e.featured)
-    return data.map(mapEventRow)
+    if (error) return []
+    return (data ?? []).map(mapEventRow)
+  },
+  async create(input) {
+    const event = buildEvent(input)
+    const { data, error } = await supabase!
+      .from('events')
+      .insert(mapEventToRow(event))
+      .select('*')
+      .single()
+    if (error) throw new Error(error.message)
+    return mapEventRow(data)
   },
 }
 

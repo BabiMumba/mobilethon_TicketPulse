@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { EventItem } from '../data/types'
 import { eventsRepository } from '../data/eventsRepository'
-import LandingHero, { HowItWorks, PaymentBadges } from '../components/landing/LandingHero'
+import LandingHero, { HowItWorks } from '../components/landing/LandingHero'
 import EventsShowcase from '../components/landing/EventsShowcase'
 
 export default function Home() {
@@ -22,7 +22,6 @@ export default function Home() {
       <LandingHero />
       <EventsShowcase events={events} />
       <HowItWorks />
-      <PaymentBadges />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { MapPin, CalendarDays } from 'lucide-react'
 import type { EventItem } from '../data/types'
-import { formatEventDate, formatMoney } from '../lib/format'
+import { formatEventDate, formatMoney, isFreeEvent } from '../lib/format'
 
 export default function EventCard({ event }: { event: EventItem }) {
   return (
@@ -25,6 +25,11 @@ export default function EventCard({ event }: { event: EventItem }) {
         <span className="absolute bottom-3 right-3 rounded-xl bg-slate-950/80 px-3 py-1.5 text-sm font-bold text-accent-400 backdrop-blur">
           {formatMoney(event.price, event.currency)}
         </span>
+        {isFreeEvent(event.price) && (
+          <span className="absolute left-3 bottom-3 rounded-full bg-accent-500 px-2.5 py-1 text-[11px] font-semibold uppercase text-white">
+            Free
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-4">

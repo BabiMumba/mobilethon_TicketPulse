@@ -29,7 +29,7 @@ export default function Profile() {
     navigate('/')
   }
 
-  const displayName = user?.name || user?.email || user?.phone || 'Member'
+  const displayName = user?.name || user?.email || 'Member'
   const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
@@ -44,7 +44,6 @@ export default function Profile() {
           <div className="min-w-0">
             <h2 className="truncate text-lg font-bold">{displayName}</h2>
             {user?.email && <p className="truncate text-sm text-slate-400">{user.email}</p>}
-            {user?.phone && <p className="text-sm text-slate-400">{user.phone}</p>}
           </div>
         </section>
 

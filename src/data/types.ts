@@ -58,10 +58,26 @@ export interface EventFilters {
   categories?: EventCategory[]
 }
 
+export interface CreateEventInput {
+  title: string
+  description: string
+  city: City
+  venue: string
+  date: string
+  price: number
+  currency?: string
+  category: EventCategory
+  imageUrl: string
+  organizer: string
+  tag?: string
+  featured?: boolean
+}
+
 export interface EventsRepository {
   list(filters?: EventFilters): Promise<EventItem[]>
   get(id: string): Promise<EventItem | null>
   featured(): Promise<EventItem[]>
+  create(input: CreateEventInput): Promise<EventItem>
 }
 
 export interface TicketsRepository {

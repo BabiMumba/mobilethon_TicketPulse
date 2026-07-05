@@ -58,6 +58,24 @@ export function mapEventRow(row: EventRow): EventItem {
   }
 }
 
+export function mapEventToRow(event: EventItem) {
+  return {
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    city: event.city,
+    venue: event.venue,
+    date: event.date,
+    price: event.price,
+    currency: event.currency,
+    category: event.category,
+    image_url: event.imageUrl,
+    organizer: event.organizer,
+    tag: event.tag ?? null,
+    featured: event.featured ?? false,
+  }
+}
+
 export function mapProfileRow(row: ProfileRow): Profile {
   return {
     id: row.id,

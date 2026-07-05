@@ -61,7 +61,7 @@ export default function TopHeader() {
                   {(user.name || user.email || 'ZM').slice(0, 2).toUpperCase()}
                 </span>
                 <span className="max-w-[10rem] truncate">
-                  {user.name || user.email || user.phone}
+                  {user.name || user.email}
                 </span>
               </button>
               {menuOpen && (

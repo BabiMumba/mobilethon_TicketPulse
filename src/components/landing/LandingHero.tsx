@@ -3,10 +3,9 @@ import {
   ArrowRight,
   Calendar,
   MapPin,
+  QrCode,
   Search,
-  Smartphone,
   Ticket,
-  WifiOff,
 } from 'lucide-react'
 import Button from '../ui/Button'
 
@@ -35,7 +34,6 @@ export default function LandingHero() {
 
   return (
     <section className="relative overflow-hidden border-b border-white/5">
-      {/* Block pattern background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-accent-500/10 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-brand-600/15 blur-3xl" />
@@ -51,7 +49,6 @@ export default function LandingHero() {
 
       <div className="relative mx-auto max-w-6xl px-5 pb-12 pt-8 md:px-6 md:pb-20 md:pt-14">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-          {/* Copy */}
           <div>
             <div className="animate-fade-in-down inline-flex items-center gap-2 rounded-xl border border-accent-500/30 bg-accent-500/10 px-3 py-1.5">
               <span className="relative flex h-2 w-2">
@@ -59,7 +56,7 @@ export default function LandingHero() {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-400" />
               </span>
               <span className="font-display text-xs uppercase tracking-widest text-accent-300">
-                Now live across 4 cities
+                Live events from Supabase
               </span>
             </div>
 
@@ -69,12 +66,10 @@ export default function LandingHero() {
             </h1>
 
             <p className="animate-fade-in-up mt-5 max-w-lg text-base leading-relaxed text-slate-400 delay-150 md:text-lg">
-              Browse concerts, sports, comedy and festivals in Zambia. Pay with
-              MTN or Airtel Money, get your QR pass instantly, and walk in — even
-              offline.
+              Discover concerts, sports and festivals across Zambia. Book free or
+              paid events, get your QR pass instantly.
             </p>
 
-            {/* Search bar */}
             <div className="animate-fade-in-up mt-8 delay-300">
               <button
                 type="button"
@@ -122,7 +117,6 @@ export default function LandingHero() {
             </div>
           </div>
 
-          {/* Bento image grid */}
           <div className="animate-scale-in relative">
             <div className="grid grid-cols-2 grid-rows-2 gap-3 md:gap-4">
               {HERO_IMAGES.map((img, i) => (
@@ -144,24 +138,23 @@ export default function LandingHero() {
               ))}
             </div>
 
-            {/* Floating feature cards */}
             <div className="absolute -bottom-4 -left-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur md:-left-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-500/20">
-                <Smartphone size={20} className="text-accent-400" />
+                <Ticket size={20} className="text-accent-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Mobile money</p>
-                <p className="text-xs text-slate-400">MTN · Airtel · Zamtel</p>
+                <p className="text-sm font-semibold text-white">Free & paid</p>
+                <p className="text-xs text-slate-400">Events from ZMW 0</p>
               </div>
             </div>
 
             <div className="absolute -right-2 top-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/95 px-4 py-3 shadow-2xl backdrop-blur md:-right-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/20">
-                <WifiOff size={20} className="text-brand-400" />
+                <QrCode size={20} className="text-brand-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Offline passes</p>
-                <p className="text-xs text-slate-400">QR works without signal</p>
+                <p className="text-sm font-semibold text-white">QR tickets</p>
+                <p className="text-xs text-slate-400">Instant confirmation</p>
               </div>
             </div>
           </div>
@@ -176,17 +169,17 @@ export function HowItWorks() {
     {
       icon: Search,
       title: 'Discover',
-      body: 'Filter by city, category or date. From Amapiano nights to marathons.',
+      body: 'Browse real events stored in Supabase — filter by city or category.',
     },
     {
-      icon: Smartphone,
-      title: 'Pay locally',
-      body: 'Authorize with MTN or Airtel Money — no card required.',
+      icon: Ticket,
+      title: 'Book',
+      body: 'Free events are instant. Paid events are reserved (payment coming soon).',
     },
     {
       icon: Calendar,
-      title: 'Show your pass',
-      body: 'Your QR ticket lives on your phone, ready at the gate.',
+      title: 'Show your QR',
+      body: 'Your ticket appears in My Tickets with a scannable QR code.',
     },
   ]
 
@@ -198,7 +191,7 @@ export function HowItWorks() {
             How it works
           </p>
           <h2 className="mt-2 font-display text-2xl text-white md:text-4xl">
-            Three taps to the front row
+            Three steps to your event
           </h2>
         </div>
 
@@ -218,39 +211,6 @@ export function HowItWorks() {
               <p className="mt-2 text-sm leading-relaxed text-slate-400">{body}</p>
             </div>
           ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-export function PaymentBadges() {
-  return (
-    <section className="py-10 md:py-14">
-      <div className="mx-auto max-w-6xl px-5 md:px-6">
-        <div className="flex flex-col items-center justify-between gap-6 rounded-3xl border border-white/10 bg-gradient-to-r from-slate-900 to-slate-900/40 p-6 md:flex-row md:p-10">
-          <div>
-            <p className="font-display text-sm uppercase tracking-widest text-accent-400">
-              Built for Zambia
-            </p>
-            <h2 className="mt-2 text-xl font-bold text-white md:text-2xl">
-              Pay the way you already do
-            </h2>
-            <p className="mt-2 max-w-md text-sm text-slate-400">
-              No international cards needed. Authorize payments directly from your
-              mobile wallet in seconds.
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3">
-            {['MTN MoMo', 'Airtel Money', 'Zamtel Kwacha'].map((provider) => (
-              <span
-                key={provider}
-                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200"
-              >
-                {provider}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
     </section>

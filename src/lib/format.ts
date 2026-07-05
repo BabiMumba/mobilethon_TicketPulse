@@ -10,5 +10,10 @@ export function formatEventDate(iso: string): string {
 }
 
 export function formatMoney(amount: number, currency = 'ZMW'): string {
+  if (amount === 0) return 'Free'
   return `${currency} ${amount.toLocaleString('en-ZM')}`
+}
+
+export function isFreeEvent(price: number): boolean {
+  return price === 0
 }

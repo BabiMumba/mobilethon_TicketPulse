@@ -7,7 +7,7 @@ import { useAuth } from '../auth/useAuth'
 import PageContainer from '../components/PageContainer'
 import Button from '../components/ui/Button'
 import { Skeleton } from '../components/ui/Skeleton'
-import { formatEventDate, formatMoney } from '../lib/format'
+import { formatEventDate, formatMoney, isFreeEvent } from '../lib/format'
 
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>()
@@ -99,7 +99,7 @@ export default function EventDetail() {
               </p>
             </div>
             <Button size="lg" onClick={handleGetTickets}>
-              Get tickets
+              {isFreeEvent(event.price) ? 'Get free ticket' : 'Reserve ticket'}
             </Button>
           </div>
         </div>

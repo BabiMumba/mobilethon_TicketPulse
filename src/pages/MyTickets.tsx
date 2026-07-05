@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { WifiOff, MapPin, CalendarDays, CheckCircle2, TicketX } from 'lucide-react'
+import { MapPin, CalendarDays, TicketX } from 'lucide-react'
 import type { Ticket } from '../data/types'
 import { ticketsRepository } from '../data/ticketsRepository'
 import { useAuth } from '../auth/useAuth'
@@ -27,23 +27,9 @@ export default function MyTickets() {
 
   return (
     <div className="animate-fade-in">
-      <ScreenHeader
-        title="My Tickets"
-        subtitle="Your passes work offline"
-        action={
-          <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-medium text-emerald-300">
-            <WifiOff size={14} /> Offline ready
-          </span>
-        }
-      />
+      <ScreenHeader title="My Tickets" subtitle="Your confirmed bookings" />
 
       <PageContainer className="space-y-5 px-5 py-5">
-        <p className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
-          <CheckCircle2 size={18} className="shrink-0" />
-          Passes &amp; QR codes are cached on this device — scan at the gate even with
-          no signal.
-        </p>
-
         {tickets === null && (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             {Array.from({ length: 2 }).map((_, i) => (

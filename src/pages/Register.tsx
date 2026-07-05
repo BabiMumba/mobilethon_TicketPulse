@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Mail, Lock, Smartphone, User } from 'lucide-react'
+import { Mail, Lock, User } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import AuthShell from '../components/AuthShell'
 import Button from '../components/ui/Button'
@@ -14,7 +14,6 @@ export default function Register() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string>()
   const [success, setSuccess] = useState<string>()
@@ -29,7 +28,7 @@ export default function Register() {
       return
     }
     setLoading(true)
-    const res = await signUp({ name, email, password, phone: phone || undefined })
+    const res = await signUp({ name, email, password })
     setLoading(false)
     if (res.ok) {
       if (res.needsEmailConfirmation) {
@@ -43,7 +42,7 @@ export default function Register() {
   return (
     <AuthShell
       title="Create your account"
-      subtitle="Join TicketPulse and never miss an event in Zambia."
+      subtitle="Email and password — that's all you need."
       footer={
         <>
           Already have an account?{' '}
@@ -68,25 +67,18 @@ export default function Register() {
           name="email"
           type="email"
           required
-          placeholder="you@example.zm"
+          autoComplete="email"
+          placeholder="you@gmail.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           icon={<Mail size={16} />}
-        />
-        <Input
-          label="Mobile number (optional)"
-          name="phone"
-          type="tel"
-          placeholder="097 000 0000"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          icon={<Smartphone size={16} />}
         />
         <Input
           label="Password"
           name="password"
           type="password"
           required
+          autoComplete="new-password"
           placeholder="At least 6 characters"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
